@@ -32,8 +32,13 @@ import com.volkov.runup.other.Constants.LOCATION_UPDATE_INTERVAL
 import com.volkov.runup.other.Constants.NOTIFICATION_CHANNEL_ID
 import com.volkov.runup.other.Constants.NOTIFICATION_CHANNEL_NAME
 import com.volkov.runup.other.Constants.NOTIFICATION_ID
+import com.volkov.runup.other.Constants.TIME_IN_SECCONDS_CALCULATION_DELAY_INTERVAL
 import com.volkov.runup.other.TrackingUtility
 import com.volkov.runup.ui.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 typealias Polyline = MutableList<LatLng>
@@ -42,8 +47,10 @@ typealias Polylines = MutableList<Polyline>
 class TrackingService : LifecycleService() {
     var isFirstRun = true
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private val timeRunInSecconds = MutableLiveData<Long>()
 
     companion object {
+        val timeRunInMillis = MutableLiveData<Long>()
         val isTracking = MutableLiveData<Boolean>()
         val pathPoints = MutableLiveData<Polylines>()
     }
@@ -51,6 +58,8 @@ class TrackingService : LifecycleService() {
     private fun postInitialValues() {
         isTracking.postValue(false)
         pathPoints.postValue(mutableListOf())
+        timeRunInSecconds.postValue(0L)
+        timeRunInMillis.postValue(0L)
     }
 
     override fun onCreate() {
@@ -63,6 +72,37 @@ class TrackingService : LifecycleService() {
         })
     }
 
+    var isTimerEnabled = false
+    private var lapTime = 0L
+    private var timeRun = 0L
+    private var timeStarted = 0L
+    private var lastSecondTimeStamp = 0L
+
+    private fun startTimer() {
+        addEmptyPolyline()
+        isTracking.postValue(true)
+        timeStarted = System.currentTimeMillis()
+        isTimerEnabled = true
+        CoroutineScope(Dispatchers.Main).launch {
+            while (isTracking.value!!) {
+                //time defference between time and time of start
+                lapTime = System.currentTimeMillis() - timeStarted
+                timeRunInMillis.postValue(timeRun + lapTime)
+                if (timeRunInMillis.value!! >= lastSecondTimeStamp + 1000L) {
+                    timeRunInSecconds.postValue(timeRunInSecconds.value!! + 1)
+                    lastSecondTimeStamp += 1000L
+                }
+                delay(TIME_IN_SECCONDS_CALCULATION_DELAY_INTERVAL)
+            }
+            timeRun =+ lapTime
+        }
+    }
+
+    private fun pauseService() {
+        isTracking.postValue(false)
+        isTimerEnabled = false
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         intent?.let {
@@ -73,10 +113,12 @@ class TrackingService : LifecycleService() {
                         isFirstRun = false
                     } else {
                         Timber.d("Resuming service")
+                        startTimer()
                     }
                 }
                 ACTION_PAUSE_SERVICE -> {
                     Timber.d("Pause service")
+                    pauseService()
                 }
                 ACTION_STOP_SERVICE -> {
                     Timber.d("Stoping service")
@@ -134,6 +176,7 @@ class TrackingService : LifecycleService() {
     } ?: pathPoints.postValue(mutableListOf(mutableListOf()))
 
     fun startForegroundService() {
+        startTimer()
         addEmptyPolyline()
         isTracking.postValue(true)
         val notificationManager =
