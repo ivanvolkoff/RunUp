@@ -9,6 +9,11 @@ object Constants {
     const val  ACTION_PAUSE_SERVICE = "ACTION_PAUSE_SERVICE"
     const val  ACTION_STOP_SERVICE = "ACTION_STOP_SERVICE"
     const val ACTION_SHOW_TRACKING_FRAGMENT = "ACTION_SHOW_TRACKING_FRAGMENT"
+    const val SHARED_PREFERENCES_NAME = "sharedPref"
+    const val KEY_FIRTS_TIME_TOGGLE = "KEY_FIRTS_TIME_TOGGLE"
+    const val KEY_NAME = "KEY_NAME"
+    const val KEY_WEIGHT = "KEY_WEIGHT"
+
 
     const val NOTIFICATION_CHANNEL_ID = "tracking_channel"
     const val NOTIFICATION_CHANNEL_NAME = "Tracking"
@@ -16,7 +21,7 @@ object Constants {
     const val LOCATION_UPDATE_INTERVAL = 5000L
     const val FASTEST_LOCATION_UPDATE_INTERVAL = 2000L
     const val POLYLINE_COLOR = Color.RED
-    const val POLYLINE_WIDTH = 10F
+    const val POLYLINE_WIDTH = 12F
     const val MAP_ZOOM = 15F
     const val TIME_IN_SECCONDS_CALCULATION_DELAY_INTERVAL = 50L
 }

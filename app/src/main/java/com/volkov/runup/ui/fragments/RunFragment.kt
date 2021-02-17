@@ -4,11 +4,16 @@ import android.Manifest
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.volkov.runup.R
+import com.volkov.runup.adapters.RunAdapter
 import com.volkov.runup.other.Constants.REQUEST_CODE_LOCATION_PERMISSION
+import com.volkov.runup.other.SortType
 import com.volkov.runup.other.TrackingUtility
 import com.volkov.runup.ui.viewmodels.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,13 +26,54 @@ import pub.devrel.easypermissions.EasyPermissions
 class RunFragment : Fragment(R.layout.fragment_run), EasyPermissions.PermissionCallbacks {
 
     private val viewModel: MainViewModel by viewModels()
+    private lateinit var runAdapter: RunAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requestPermissons()
+        setUpRecyclerView()
+
+        when (viewModel.sortType) {
+            SortType.DATA -> spFilter.setSelection(0)
+            SortType.RUNNINGTIME -> spFilter.setSelection(1)
+            SortType.DISTANCE -> spFilter.setSelection(2)
+            SortType.SPEED -> spFilter.setSelection(3)
+            SortType.CALLORIES_BURNED -> spFilter.setSelection(4)
+        }
+
+        spFilter.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                adapterView: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                when (position) {
+                    0 -> viewModel.sortRunds(SortType.DATA)
+                    1 -> viewModel.sortRunds(SortType.RUNNINGTIME)
+                    2 -> viewModel.sortRunds(SortType.DISTANCE)
+                    3 -> viewModel.sortRunds(SortType.SPEED)
+                    4 -> viewModel.sortRunds(SortType.CALLORIES_BURNED)
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+
+        }
+
+        viewModel.runs.observe(viewLifecycleOwner, Observer {
+            runAdapter.submitList(it)
+        })
+
         fab.setOnClickListener {
             findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
         }
+    }
+
+    private fun setUpRecyclerView() = rvRuns.apply {
+        runAdapter = RunAdapter()
+        adapter = runAdapter
+        layoutManager = LinearLayoutManager(requireContext())
     }
 
     private fun requestPermissons() {

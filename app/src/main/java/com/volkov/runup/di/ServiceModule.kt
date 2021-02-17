@@ -30,7 +30,7 @@ class ServiceModule {
     @Provides
     fun provideMainActivityPendingIntent(
         @ApplicationContext app: Context
-    ) = PendingIntent.getActivity(
+    ): PendingIntent = PendingIntent.getActivity(
         app, 0, Intent(app, MainActivity::class.java).also {
             it.action = Constants.ACTION_SHOW_TRACKING_FRAGMENT
         }, PendingIntent.FLAG_UPDATE_CURRENT
@@ -45,5 +45,5 @@ class ServiceModule {
             .setSmallIcon(R.drawable.ic_directions_run_black_24dp)
             .setContentTitle("RunUP")
             .setContentText("00:00:00")
-            .setContentIntent(pendingIntent)
+            .setContentIntent(pendingIntent)!!
 }
